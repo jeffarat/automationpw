@@ -1,0 +1,14 @@
+{
+  "name": "automationpw",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/jeffarat/automationpw.git",
+  "author": "jeffarat <ingenieroch@icloud.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "@playwright/test": "^1.40.1",
+    "@types/node": "^20.11.0"
+  },
+  "scripts": {}
+}
