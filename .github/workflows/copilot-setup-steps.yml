@@ -29,9 +29,6 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Claude Code Action Official
-      uses: anthropics/claude-code-action@v1
-
     # Customize this step as needed
     - name: Build application
       run: npx run build
