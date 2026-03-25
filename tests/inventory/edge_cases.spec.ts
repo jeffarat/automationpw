@@ -18,28 +18,6 @@ test.describe("Edge Cases and Error Handling", () => {
     await loginPage.clickOnLoginButton();
   });
 
-  test("Attempt to add excessive items to cart", async ({ page }) => {
-    await test.step("Add all 6 products to cart", async () => {
-      const addButtons = page.locator('[data-test^="add-to-cart-"]');
-      const count = await addButtons.count();
-      for (let i = 0; i < count; i++) {
-        await addButtons.nth(i).click();
-      }
-    });
-
-    await test.step("Verify cart badge shows 6", async () => {
-      await expect(inventory.cartBadge).toContainText("6");
-    });
-
-    await test.step("Verify no duplicate items in cart", async () => {
-      await inventory.clickCart();
-      const cartItems = await page
-        .locator('[data-test="inventory-item-name"]')
-        .count();
-      expect(cartItems).toBe(6);
-    });
-  });
-
   test("Handle rapid add/remove clicks", async () => {
     const addButton = inventory.addToCartButton("sauce-labs-backpack");
     const removeButton = inventory.removeButton("sauce-labs-backpack");

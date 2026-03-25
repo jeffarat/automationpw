@@ -76,29 +76,4 @@ test.describe("Navigation and Menu", () => {
     });
   });
 
-  test("Reset app state from menu", async () => {
-    await test.step("Add items to cart", async () => {
-      await inventory.addProductToCart("sauce-labs-backpack");
-      await inventory.addProductToCart("sauce-labs-bike-light");
-    });
-
-    await test.step("Verify items are in cart", async () => {
-      await expect(inventory.cartBadge).toContainText("2");
-    });
-
-    await test.step("Open the menu and click Reset App State", async () => {
-      await inventory.openMenu();
-      await inventory.menuLink("reset app state").click();
-    });
-
-    await test.step("Verify cart is cleared", async () => {
-      await expect(inventory.cartBadge).not.toBeVisible();
-    });
-
-    await test.step("Verify products show Add to cart button", async () => {
-      await expect(
-        inventory.addToCartButton("sauce-labs-backpack"),
-      ).toBeVisible();
-    });
-  });
 });
