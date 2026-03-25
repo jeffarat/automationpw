@@ -2,116 +2,103 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
+import { Login } from "../../pages/Login";
+import { Inventory } from "../../pages/Inventory";
+import userData from "../../data/loginData.json";
 
 test.describe("Navigation and Menu", () => {
-  test("Open side menu from inventory page", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  let inventory: Inventory;
 
-    // Click the 'Open Menu' button
-    await page.getByRole("button", { name: /open menu/i }).click();
-
-    // Verify menu opens and shows options
-    await expect(page.getByRole("link", { name: /all items/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /about/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /logout/i })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /reset app state/i }),
-    ).toBeVisible();
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new Login(page);
+    inventory = new Inventory(page);
+    await loginPage.gotoLoginPage();
+    await loginPage.fillUsername(userData.credentials.username);
+    await loginPage.fillPassword(userData.credentials.password);
+    await loginPage.clickOnLoginButton();
   });
 
-  test("Close side menu", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Open side menu from inventory page", async () => {
+    await test.step("Click the Open Menu button", async () => {
+      await inventory.openMenu();
+    });
 
-    // Open the side menu
-    await page.getByRole("button", { name: /open menu/i }).click();
-
-    // Verify menu is open
-    await expect(page.getByRole("link", { name: /all items/i })).toBeVisible();
-
-    // Click 'Close Menu' button
-    await page.getByRole("button", { name: /close menu/i }).click();
-
-    // Verify menu closes
-    await expect(
-      page.getByRole("link", { name: /all items/i }),
-    ).not.toBeVisible();
+    await test.step("Verify menu shows all options", async () => {
+      await expect(inventory.menuLink("all items")).toBeVisible();
+      await expect(inventory.menuLink("about")).toBeVisible();
+      await expect(inventory.menuLink("logout")).toBeVisible();
+      await expect(inventory.menuLink("reset app state")).toBeVisible();
+    });
   });
 
-  test("Click 'All Items' in menu (already on inventory)", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Close side menu", async () => {
+    await test.step("Open the side menu", async () => {
+      await inventory.openMenu();
+    });
 
-    // Open the menu
-    await page.getByRole("button", { name: /open menu/i }).click();
+    await test.step("Verify menu is open", async () => {
+      await expect(inventory.menuLink("all items")).toBeVisible();
+    });
 
-    // Click 'All Items'
-    await page.getByRole("link", { name: /all items/i }).click();
+    await test.step("Click Close Menu button", async () => {
+      await inventory.closeMenu();
+    });
 
-    // Verify page shows all products
-    const products = await page
-      .locator('[data-test^="item-"][data-test$="-title-link"]')
-      .count();
-    expect(products).toBe(6);
+    await test.step("Verify menu closes", async () => {
+      await expect(inventory.menuLink("all items")).not.toBeVisible();
+    });
   });
 
-  test.skip("Navigate to About from menu", async ({ page }) => {
+  test("Click 'All Items' in menu (already on inventory)", async () => {
+    await test.step("Open the menu", async () => {
+      await inventory.openMenu();
+    });
+
+    await test.step("Click All Items", async () => {
+      await inventory.menuLink("all items").click();
+    });
+
+    await test.step("Verify page shows all products", async () => {
+      await expect(inventory.productTitles).toHaveCount(6);
+    });
+  });
+
+  test.skip("Navigate to About from menu", async () => {
     // This test opens an external link which can be unreliable in test environments
     // The About link is visible and clickable on the menu which is tested by other menu tests
 
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+    await test.step("Open the menu", async () => {
+      await inventory.openMenu();
+    });
 
-    // Open the menu
-    await page.getByRole("button", { name: /open menu/i }).click();
-
-    // Verify About link is visible (functional test of link existence)
-    await expect(page.getByRole("link", { name: /about/i })).toBeVisible();
+    await test.step("Verify About link is visible", async () => {
+      await expect(inventory.menuLink("about")).toBeVisible();
+    });
   });
 
-  test("Reset app state from menu", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Reset app state from menu", async () => {
+    await test.step("Add items to cart", async () => {
+      await inventory.addProductToCart("sauce-labs-backpack");
+      await inventory.addProductToCart("sauce-labs-bike-light");
+    });
 
-    // Add items to cart
-    await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
-    await page
-      .locator('[data-test="add-to-cart-sauce-labs-bike-light"]')
-      .click();
+    await test.step("Verify items are in cart", async () => {
+      await expect(inventory.cartBadge).toContainText("2");
+    });
 
-    // Verify items are in cart
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-    await expect(cartBadge).toContainText("2");
+    await test.step("Open the menu and click Reset App State", async () => {
+      await inventory.openMenu();
+      await inventory.menuLink("reset app state").click();
+    });
 
-    // Open the menu
-    await page.getByRole("button", { name: /open menu/i }).click();
+    await test.step("Verify cart is cleared", async () => {
+      await expect(inventory.cartBadge).not.toBeVisible();
+    });
 
-    // Click 'Reset App State'
-    await page.getByRole("link", { name: /reset app state/i }).click();
-
-    // Verify cart is cleared
-    await expect(cartBadge).not.toBeVisible();
-
-    // Verify all products show 'Add to cart' button (or at least some do after reset)
-    // After reset, the remove buttons should be replaced with add buttons
-    const addButtons = await page
-      .locator('[data-test^="add-to-cart-"]')
-      .first();
-    await expect(addButtons).toBeVisible();
+    await test.step("Verify products show Add to cart button", async () => {
+      await expect(
+        inventory.addToCartButton("sauce-labs-backpack"),
+      ).toBeVisible();
+    });
   });
 });

@@ -2,112 +2,94 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
+import { Login } from "../../pages/Login";
+import { Inventory } from "../../pages/Inventory";
+import userData from "../../data/loginData.json";
 
 test.describe("Add to Cart Functionality", () => {
-  test("Add single product to cart", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  let inventory: Inventory;
 
-    // Click 'Add to cart' button on the Sauce Labs Backpack
-    const addButton = page.locator(
-      '[data-test="add-to-cart-sauce-labs-backpack"]',
-    );
-    await addButton.click();
-
-    // Verify the cart badge updates to show '1'
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-    await expect(cartBadge).toContainText("1");
-
-    // Verify the button changes to 'Remove'
-    const removeButton = page.locator(
-      '[data-test="remove-sauce-labs-backpack"]',
-    );
-    await expect(removeButton).toBeVisible();
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new Login(page);
+    inventory = new Inventory(page);
+    await loginPage.gotoLoginPage();
+    await loginPage.fillUsername(userData.credentials.username);
+    await loginPage.fillPassword(userData.credentials.password);
+    await loginPage.clickOnLoginButton();
   });
 
-  test("Add multiple different products to cart", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Add single product to cart", async () => {
+    await test.step("Click Add to cart on Sauce Labs Backpack", async () => {
+      await inventory.addProductToCart("sauce-labs-backpack");
+    });
 
-    // Add Sauce Labs Backpack to cart
-    await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
+    await test.step("Verify cart badge shows 1", async () => {
+      await expect(inventory.cartBadge).toContainText("1");
+    });
 
-    // Add Sauce Labs Bike Light to cart
-    await page
-      .locator('[data-test="add-to-cart-sauce-labs-bike-light"]')
-      .click();
-
-    // Add Sauce Labs Bolt T-Shirt to cart
-    await page
-      .locator('[data-test="add-to-cart-sauce-labs-bolt-t-shirt"]')
-      .click();
-
-    // Verify cart badge now shows '3'
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-    await expect(cartBadge).toContainText("3");
+    await test.step("Verify button changes to Remove", async () => {
+      await expect(inventory.removeButton("sauce-labs-backpack")).toBeVisible();
+    });
   });
 
-  test("Remove product from cart on inventory page", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Add multiple different products to cart", async () => {
+    await test.step("Add three products to cart", async () => {
+      await inventory.addProductToCart("sauce-labs-backpack");
+      await inventory.addProductToCart("sauce-labs-bike-light");
+      await inventory.addProductToCart("sauce-labs-bolt-t-shirt");
+    });
 
-    // Add item to cart first
-    await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
-
-    // Verify 'Remove' button is displayed
-    const removeButton = page.locator(
-      '[data-test="remove-sauce-labs-backpack"]',
-    );
-    await expect(removeButton).toBeVisible();
-
-    // Click 'Remove' button
-    await removeButton.click();
-
-    // Verify cart badge disappears
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-    await expect(cartBadge).not.toBeVisible();
-
-    // Verify button reverts to 'Add to cart'
-    const addButton = page.locator(
-      '[data-test="add-to-cart-sauce-labs-backpack"]',
-    );
-    await expect(addButton).toBeVisible();
+    await test.step("Verify cart badge shows 3", async () => {
+      await expect(inventory.cartBadge).toContainText("3");
+    });
   });
 
-  test("Add to cart then remove from cart", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+  test("Remove product from cart on inventory page", async () => {
+    await test.step("Add item to cart", async () => {
+      await inventory.addProductToCart("sauce-labs-backpack");
+    });
 
-    // Add Sauce Labs Onesie to cart
-    const addButton = page.locator(
-      '[data-test="add-to-cart-sauce-labs-onesie"]',
-    );
-    await addButton.click();
+    await test.step("Verify Remove button is displayed", async () => {
+      await expect(inventory.removeButton("sauce-labs-backpack")).toBeVisible();
+    });
 
-    // Verify button changes to Remove
-    const removeButton = page.locator('[data-test="remove-sauce-labs-onesie"]');
-    await expect(removeButton).toBeVisible();
+    await test.step("Click Remove button", async () => {
+      await inventory.removeProductFromCart("sauce-labs-backpack");
+    });
 
-    // Remove Sauce Labs Onesie from cart
-    await removeButton.click();
+    await test.step("Verify cart badge disappears", async () => {
+      await expect(inventory.cartBadge).not.toBeVisible();
+    });
 
-    // Verify button changes back to Add to cart
-    await expect(addButton).toBeVisible();
+    await test.step("Verify button reverts to Add to cart", async () => {
+      await expect(
+        inventory.addToCartButton("sauce-labs-backpack"),
+      ).toBeVisible();
+    });
+  });
 
-    // Add it back to cart
-    await addButton.click();
-    await expect(removeButton).toBeVisible();
+  test("Add to cart then remove from cart", async () => {
+    await test.step("Add Sauce Labs Onesie to cart", async () => {
+      await inventory.addProductToCart("sauce-labs-onesie");
+    });
+
+    await test.step("Verify button changes to Remove", async () => {
+      await expect(inventory.removeButton("sauce-labs-onesie")).toBeVisible();
+    });
+
+    await test.step("Remove Sauce Labs Onesie from cart", async () => {
+      await inventory.removeProductFromCart("sauce-labs-onesie");
+    });
+
+    await test.step("Verify button changes back to Add to cart", async () => {
+      await expect(
+        inventory.addToCartButton("sauce-labs-onesie"),
+      ).toBeVisible();
+    });
+
+    await test.step("Add it back to cart", async () => {
+      await inventory.addProductToCart("sauce-labs-onesie");
+      await expect(inventory.removeButton("sauce-labs-onesie")).toBeVisible();
+    });
   });
 });

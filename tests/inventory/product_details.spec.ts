@@ -2,78 +2,73 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
+import { Login } from "../../pages/Login";
+import { Inventory } from "../../pages/Inventory";
+import userData from "../../data/loginData.json";
 
 test.describe("Product Details and Navigation", () => {
+  let inventory: Inventory;
+
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new Login(page);
+    inventory = new Inventory(page);
+    await loginPage.gotoLoginPage();
+    await loginPage.fillUsername(userData.credentials.username);
+    await loginPage.fillPassword(userData.credentials.password);
+    await loginPage.clickOnLoginButton();
+  });
+
   test("Click on product name to view product details", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+    await test.step("Click on Sauce Labs Backpack title", async () => {
+      await inventory.clickProductTitle(4);
+    });
 
-    // Click on the product name 'Sauce Labs Backpack'
-    await page.locator('[data-test="item-4-title-link"]').click();
-
-    // Verify page navigates to product detail page
-    await expect(page).toHaveURL(/inventory-item\.html\?id=4/);
-
-    // Verify product name, description, price, and image are displayed
-    await expect(page.getByText("Sauce Labs Backpack")).toBeVisible();
-    await expect(page.locator('img[alt="Sauce Labs Backpack"]')).toBeVisible();
+    await test.step("Verify product detail page loads", async () => {
+      await expect(page).toHaveURL(/inventory-item\.html\?id=4/);
+      await expect(page.getByText("Sauce Labs Backpack")).toBeVisible();
+      await expect(
+        page.locator('img[alt="Sauce Labs Backpack"]'),
+      ).toBeVisible();
+    });
   });
 
   test("Click on product image to view product details", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+    await test.step("Click on Sauce Labs Bike Light image", async () => {
+      await inventory.clickProductImage("Sauce Labs Bike Light");
+    });
 
-    // Click on the product image for Sauce Labs Bike Light
-    await page.locator('img[alt="Sauce Labs Bike Light"]').first().click();
-
-    // Verify page navigates to product detail page
-    await expect(page).toHaveURL(/inventory-item\.html\?id=0/);
+    await test.step("Verify product detail page loads", async () => {
+      await expect(page).toHaveURL(/inventory-item\.html\?id=0/);
+    });
   });
 
   test("Navigate back from product details to inventory", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+    await test.step("Click on a product to view details", async () => {
+      await inventory.clickProductTitle(4);
+    });
 
-    // Click on a product to view details
-    await page.locator('[data-test="item-4-title-link"]').click();
+    await test.step("Click Back to products button", async () => {
+      await inventory.backToProductsButton.click();
+    });
 
-    // Click 'Back to products' button
-    await page.locator('[data-test="back-to-products"]').click();
-
-    // Verify page returns to inventory
-    await expect(page).toHaveURL("https://www.saucedemo.com/inventory.html");
-
-    // Verify all products are still visible
-    const products = await page
-      .locator('[data-test^="item-"][data-test$="-title-link"]')
-      .count();
-    expect(products).toBe(6);
+    await test.step("Verify page returns to inventory with all products", async () => {
+      await expect(page).toHaveURL(/\/inventory\.html/);
+      await expect(inventory.productTitles).toHaveCount(6);
+    });
   });
 
   test("View product description and specifications", async ({ page }) => {
-    // Navigate to inventory page
-    await page.goto("https://www.saucedemo.com/");
-    await page.locator('[data-test="username"]').fill("standard_user");
-    await page.locator('[data-test="password"]').fill("secret_sauce");
-    await page.locator('[data-test="login-button"]').click();
+    await test.step("Verify product is visible on inventory page", async () => {
+      const firstProduct = page.locator('[data-test^="item-"]').first();
+      await expect(firstProduct).toBeVisible();
+    });
 
-    // Verify descriptions are visible on inventory page by checking each product has text content
-    const firstProduct = page.locator('[data-test^="item-"]').first();
-    await expect(firstProduct).toBeVisible();
+    await test.step("Click on a product to view full details", async () => {
+      await inventory.clickProductTitle(4);
+    });
 
-    // Click on a product to view full details
-    await page.locator('[data-test="item-4-title-link"]').click();
-
-    // Verify product information is accessible
-    await expect(page.getByText("Sauce Labs Backpack")).toBeVisible();
+    await test.step("Verify product information is accessible", async () => {
+      await expect(page.getByText("Sauce Labs Backpack")).toBeVisible();
+    });
   });
 });
