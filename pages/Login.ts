@@ -15,7 +15,7 @@ export class Login {
     }
 
     async gotoLoginPage() {
-        await this.page.goto("https://www.saucedemo.com/");
+        await this.page.goto("/");
       }
 
     async fillUsername(user: string){

@@ -14,7 +14,7 @@ test.describe("Login scenarios", () => {
       await loginPage.clickOnLoginButton();
     });
     await test.step("Check that the user is redirected to the inventory page", async () => {
-      await expect(page).toHaveURL("https://www.saucedemo.com/inventory.html");
+      await expect(page).toHaveURL(/\/inventory\.html/);
       await expect(page).toHaveTitle(/.*Swag Labs/);
     });
   });
